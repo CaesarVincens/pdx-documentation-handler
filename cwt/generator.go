@@ -32,6 +32,12 @@ func Generate() error {
 		return err
 	}
 
+	scriptedLists := PrintScriptedListEnum(documentation)
+	err = os.WriteFile(path.Join(cwtPath, "list_base.cwt"), []byte(scriptedLists), 0644)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

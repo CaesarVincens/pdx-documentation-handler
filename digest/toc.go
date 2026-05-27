@@ -15,9 +15,12 @@ func generateDiscordTableOfContents(digestPath, version string) error {
 
 	builder.WriteString(fmt.Sprintf("# Release %s\n", version))
 
-	err := filepath.Walk(digestPath, func(path string, info fs.FileInfo, err error) error {
+	err := filepath.WalkDir(digestPath, func(path string, info fs.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+		if info.IsDir() && strings.Count(path, string(os.PathSeparator)) > 0 {
+			return fs.SkipDir
 		}
 		if info.IsDir() {
 			return nil
@@ -35,9 +38,6 @@ func generateDiscordTableOfContents(digestPath, version string) error {
 			if strings.HasPrefix(line, "# ") {
 				header := strings.TrimPrefix(line, "# ")
 				builder.WriteString("## " + header + "\n")
-				continue
-			}
-			if strings.Contains(line, "Table of Contents") {
 				continue
 			}
 			if strings.Contains(line, "Notes") {

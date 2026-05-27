@@ -66,3 +66,21 @@ func printScopes(scopes []string) string {
 	}
 	return strings.TrimSpace(builder.String())
 }
+
+func PrintScriptedListEnum(docs *parser.ScriptDocumentation) string {
+	var builder = strings.Builder{}
+
+	builder.WriteString("enums = {\n\n")
+	builder.WriteString("\t# Auto Generated:\n")
+	builder.WriteString("\t# This is a list of all base game iterators.\n")
+	builder.WriteString("\tenum[scripted_list_base] = {\n")
+	for _, iterator := range docs.IteratorDocumentation.Elements {
+		builder.WriteString("\t\t")
+		builder.WriteString(iterator.Name)
+		builder.WriteString("\n")
+	}
+	builder.WriteString("\t}\n\n")
+	builder.WriteString("}")
+
+	return builder.String()
+}
