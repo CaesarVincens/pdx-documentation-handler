@@ -38,6 +38,12 @@ func Generate() error {
 		return err
 	}
 
+	onActions := PrintOnActions(documentation)
+	err = os.WriteFile(path.Join(cwtPath, "on_actions.cwt"), []byte(onActions), 0644)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
