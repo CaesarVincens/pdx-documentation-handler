@@ -28,8 +28,9 @@ const (
 )
 
 type DataTypeDocumentation struct {
-	DataTypes      []*DataType         `json:"data-types"`
-	GlobalPromotes []*DataTypeFunction `json:"global-promotes"`
+	DataTypes       []*DataType         `json:"data-types"`
+	GlobalFunctions []*DataTypeFunction `json:"global-functions"`
+	GlobalPromotes  []*DataTypePromote  `json:"global-promotes"`
 }
 
 type DataType struct {
@@ -47,14 +48,25 @@ type DataTypeFunction struct {
 	ReturnType  string
 }
 
+type DataTypePromote struct {
+	Name        string
+	Description string
+	ReturnType  string
+}
+
 func (d *DataTypeFunction) ElementName() string {
+	return d.Name
+}
+
+func (d *DataTypePromote) ElementName() string {
 	return d.Name
 }
 
 func ParseDataTypeDocumentation(folder string) (*DataTypeDocumentation, error) {
 	documentation := &DataTypeDocumentation{
-		DataTypes:      make([]*DataType, 0),
-		GlobalPromotes: make([]*DataTypeFunction, 0),
+		DataTypes:       make([]*DataType, 0),
+		GlobalFunctions: make([]*DataTypeFunction, 0),
+		GlobalPromotes:  make([]*DataTypePromote, 0),
 	}
 
 	err := parseDataTypeFile(path.Join(folder, dataTypesCommon), documentation)
@@ -98,9 +110,10 @@ func parseDataTypeFile(file string, documentation *DataTypeDocumentation) error 
 	scanner := bufio.NewScanner(bytes.NewReader(content))
 	var dataType *DataType = nil
 	var function *DataTypeFunction = nil
+	var promote *DataTypePromote = nil
 	for scanner.Scan() {
 		cleanLine := strings.TrimSpace(scanner.Text())
-		if isDataTypeName(cleanLine) && (dataType != nil && function != nil) {
+		if isDataTypeName(cleanLine) && (dataType != nil && function != nil && promote != nil) {
 			return fmt.Errorf("unterminated data type: %s, %s", dataType.Name, cleanLine)
 		}
 		if isDataTypeName(cleanLine) {
@@ -110,16 +123,24 @@ func parseDataTypeFile(file string, documentation *DataTypeDocumentation) error 
 			function = &DataTypeFunction{
 				Name: strings.TrimSuffix(cleanLine, ":"),
 			}
+			promote = &DataTypePromote{
+				Name: strings.TrimSuffix(cleanLine, ":"),
+			}
 			continue
 		}
-		if cleanLine == terminator && (dataType != nil || function != nil) {
+		if cleanLine == terminator && (dataType != nil || function != nil || promote != nil) {
 			if dataType != nil {
 				documentation.DataTypes = append(documentation.DataTypes, dataType)
 				function = nil
 				dataType = nil
 			}
 			if function != nil {
-				documentation.GlobalPromotes = append(documentation.GlobalPromotes, function)
+				documentation.GlobalFunctions = append(documentation.GlobalFunctions, function)
+				function = nil
+				dataType = nil
+			}
+			if promote != nil {
+				documentation.GlobalPromotes = append(documentation.GlobalPromotes, promote)
 				function = nil
 				dataType = nil
 			}
@@ -141,14 +162,22 @@ func parseDataTypeFile(file string, documentation *DataTypeDocumentation) error 
 			definition := strings.TrimPrefix(cleanLine, dataTypeDefinition)
 			if definition == "Type" {
 				function = nil
+				promote = nil
+				continue
+			}
+			if isGlobalFunction(definition) {
+				dataType = nil
+				promote = nil
 				continue
 			}
 			if isGlobalPromote(definition) {
 				dataType = nil
+				function = nil
 				continue
 			}
 			dataType = nil
 			function = nil
+			promote = nil
 			continue
 		}
 		if strings.HasPrefix(cleanLine, dataTypeReturn) {
@@ -172,6 +201,8 @@ func isDataTypeName(line string) bool {
 }
 
 func isGlobalPromote(definition string) bool {
-	return definition == "Global promote" ||
-		definition == "Global function"
+	return definition == "Global promote"
+}
+func isGlobalFunction(definition string) bool {
+	return definition == "Global function"
 }

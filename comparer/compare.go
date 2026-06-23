@@ -16,8 +16,9 @@ type ScriptDocumentationCompareResult struct {
 }
 
 type DataTypesCompareResult struct {
-	DataTypeResult      *ElementResult[*parser.DataType]         `json:"data-type-result"`
-	GlobalPromoteResult *ElementResult[*parser.DataTypeFunction] `json:"global-promote-result"`
+	DataTypeResult       *ElementResult[*parser.DataType]         `json:"data-type-result"`
+	GlobalFunctionResult *ElementResult[*parser.DataTypeFunction] `json:"global-function-result"`
+	GlobalPromoteResult  *ElementResult[*parser.DataTypePromote]  `json:"global-promote-result"`
 }
 
 type ElementResult[T parser.DocumentationElement] struct {
@@ -44,6 +45,7 @@ func CompareDataTypes(old *parser.DataTypeDocumentation, new *parser.DataTypeDoc
 	result := &DataTypesCompareResult{}
 
 	result.DataTypeResult = compareBasic(old.DataTypes, new.DataTypes)
+	result.GlobalFunctionResult = compareBasic(old.GlobalFunctions, new.GlobalFunctions)
 	result.GlobalPromoteResult = compareBasic(old.GlobalPromotes, new.GlobalPromotes)
 
 	return result
