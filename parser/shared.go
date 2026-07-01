@@ -15,8 +15,7 @@ type DocumentationElement interface {
 }
 
 func cleanLine(line string) string {
-	output := strings.TrimSpace(line)
-	output = strings.TrimPrefix(output, prefixSmall)
+	output := strings.TrimPrefix(line, prefixSmall)
 	output = strings.TrimPrefix(output, prefixMedium)
 	output = strings.TrimPrefix(output, prefixSupportedScopes)
 	output = strings.TrimPrefix(output, prefixSupportedTargets)
@@ -30,6 +29,10 @@ func cleanLine(line string) string {
 	output = strings.TrimPrefix(output, onActionFromCode)
 	output = strings.TrimPrefix(output, onActionExpectedScope)
 	output = strings.TrimPrefix(output, onActionSeparator)
+	output = strings.TrimPrefix(output, modifierMask)
+	output = strings.TrimPrefix(output, modifierName)
+	output = strings.TrimPrefix(output, modifierDescription)
+	output = strings.TrimSpace(output)
 	return output
 }
 

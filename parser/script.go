@@ -6,11 +6,14 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"regexp"
 	"slices"
 	"strings"
 
 	"bahmut.de/pdx-documentation-manager/util"
 )
+
+var regexModifierIdentifier = regexp.MustCompile(`^[a-zA-Z0-9_-]+:$`)
 
 const (
 	scriptEffects      = "effects.log"
@@ -18,33 +21,44 @@ const (
 	scriptEventTargets = "event_targets.log"
 	scriptEventScopes  = "event_scopes.log"
 	scriptOnActions    = "on_actions.log"
+	scriptModifiers    = "modifiers.log"
 )
 
 const (
-	listSeparator             = ", "
-	prefixSmall               = "### "
-	prefixMedium              = "## "
-	prefixSupportedScopes     = "**Supported Scopes**: "
-	prefixSupportedTargets    = "**Supported Targets**: "
-	triggerTraitValue         = "Traits: <, <=, =, !=, >, >="
-	triggerTraitBoolean       = "Traits: yes/no"
-	eventTargetInput          = "Input Scopes: "
-	eventTargetOutput         = "Output Scopes: "
-	eventTargetTraitParameter = "Requires Data: yes"
-	iteratorAny               = "any_"
-	iteratorEvery             = "every_"
-	iteratorOrdered           = "ordered_"
-	iteratorRandom            = "random_"
-	scopeSupportTriggers      = "Evaluate Triggers: "
-	scopeSupportEffects       = "Execute Effects: "
-	scopeSupportScopes        = "Change Scopes: "
-	scopeSaveGameIdentifier   = "Save Token: "
-	scopeSupportVariables     = "Stores Variables: "
-	scriptBoolTrue            = "yes"
-	scriptBoolFalse           = "no"
-	onActionSeparator         = "--------------------"
-	onActionFromCode          = "From Code: "
-	onActionExpectedScope     = "Expected Scope: "
+	listSeparator              = ", "
+	prefixSmall                = "### "
+	prefixMedium               = "## "
+	prefixSupportedScopes      = "**Supported Scopes**: "
+	prefixSupportedTargets     = "**Supported Targets**: "
+	triggerTraitValue          = "Traits: <, <=, =, !=, >, >="
+	triggerTraitBoolean        = "Traits: yes/no"
+	eventTargetInput           = "Input Scopes: "
+	eventTargetOutput          = "Output Scopes: "
+	eventTargetTraitParameter  = "Requires Data: yes"
+	iteratorAny                = "any_"
+	iteratorEvery              = "every_"
+	iteratorOrdered            = "ordered_"
+	iteratorRandom             = "random_"
+	scopeSupportTriggers       = "Evaluate Triggers: "
+	scopeSupportEffects        = "Execute Effects: "
+	scopeSupportScopes         = "Change Scopes: "
+	scopeSaveGameIdentifier    = "Save Token: "
+	scopeSupportVariables      = "Stores Variables: "
+	scriptBoolTrue             = "yes"
+	scriptBoolFalse            = "no"
+	onActionSeparator          = "--------------------"
+	onActionFromCode           = "From Code: "
+	onActionExpectedScope      = "Expected Scope: "
+	modifierMask               = "  Mask: "
+	modifierName               = "  Name: "
+	modifierDescription        = "  Description: "
+	modifierStaticModifiers    = "--- Static modifier types ---"
+	modifierDynamicModifiers   = "--- Dynamic modifier types ---"
+	modifierPotentialModifiers = "--- Potential dynamic modifier types ---"
+	modifierTypeUnknown        = "unknown"
+	modifierTypeStatic         = "static"
+	modifierTypeDynamic        = "dynamic"
+	modifierTypePotential      = "potential"
 )
 
 type ScriptDocumentation struct {
@@ -54,10 +68,11 @@ type ScriptDocumentation struct {
 	IteratorDocumentation    *ElementDocumentation[Iterator]    `json:"iterator-documentation"`
 	ScopeDocumentation       *ElementDocumentation[Scope]       `json:"scope-documentation"`
 	OnActionDocumentation    *ElementDocumentation[OnAction]    `json:"on-action-documentation"`
+	ModifierDocumentation    *ElementDocumentation[Modifier]    `json:"modifier-documentation"`
 }
 
 type ScriptElements interface {
-	Effect | Trigger | EventTarget | Iterator | Scope | OnAction
+	Effect | Trigger | EventTarget | Iterator | Scope | OnAction | Modifier
 }
 
 type ElementDocumentation[T ScriptElements] struct {
@@ -136,6 +151,18 @@ func (o *OnAction) ElementName() string {
 	return o.Name
 }
 
+type Modifier struct {
+	Name        string `json:"name"`
+	Mask        string `json:"mask"`
+	Type        string `json:"type"`
+	FullName    string `json:"full-name"`
+	Description string `json:"description"`
+}
+
+func (o *Modifier) ElementName() string {
+	return o.Name
+}
+
 func ParseScriptDocumentation(folder string) (*ScriptDocumentation, error) {
 	if !util.Exists(folder) {
 		return nil, fmt.Errorf("script documentation folder does not exist: %s", folder)
@@ -182,7 +209,7 @@ func ParseScriptDocumentation(folder string) (*ScriptDocumentation, error) {
 	}
 
 	scopeFile := path.Join(folder, scriptEventScopes)
-	if util.Exists(eventTargetFile) {
+	if util.Exists(scopeFile) {
 		elements, err := ParseScopeDocumentation(scopeFile)
 		if err != nil {
 			return nil, err
@@ -193,7 +220,7 @@ func ParseScriptDocumentation(folder string) (*ScriptDocumentation, error) {
 	}
 
 	onActionFile := path.Join(folder, scriptOnActions)
-	if util.Exists(eventTargetFile) {
+	if util.Exists(onActionFile) {
 		elements, err := ParseOnActionDocumentation(onActionFile)
 		if err != nil {
 			return nil, err
@@ -201,6 +228,17 @@ func ParseScriptDocumentation(folder string) (*ScriptDocumentation, error) {
 		documentation.OnActionDocumentation = elements
 	} else {
 		return nil, fmt.Errorf("on action documentation does not exist: %s", effectFile)
+	}
+
+	modifiersFile := path.Join(folder, scriptModifiers)
+	if util.Exists(modifiersFile) {
+		elements, err := ParseModifierDocumentation(modifiersFile)
+		if err != nil {
+			return nil, err
+		}
+		documentation.ModifierDocumentation = elements
+	} else {
+		return nil, fmt.Errorf("modifier documentation does not exist: %s", effectFile)
 	}
 
 	return documentation, nil
@@ -562,6 +600,69 @@ func ParseOnActionDocumentation(file string) (*ElementDocumentation[OnAction], e
 		}
 		if strings.HasPrefix(line, onActionExpectedScope) {
 			element.Scope = cleanLine
+			continue
+		}
+	}
+
+	return documentation, nil
+}
+
+func ParseModifierDocumentation(file string) (*ElementDocumentation[Modifier], error) {
+	documentation := &ElementDocumentation[Modifier]{
+		File:     file,
+		Elements: make([]*Modifier, 0),
+	}
+
+	content, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	scanner := bufio.NewScanner(bytes.NewReader(content))
+
+	modifierType := modifierTypeUnknown
+
+	var element *Modifier = nil
+	for scanner.Scan() {
+		line := scanner.Text()
+		cleanLine := cleanLine(line)
+		if cleanLine == modifierStaticModifiers {
+			modifierType = modifierTypeStatic
+			continue
+		}
+		if cleanLine == modifierDynamicModifiers {
+			modifierType = modifierTypeDynamic
+			continue
+		}
+		if cleanLine == modifierPotentialModifiers {
+			modifierType = modifierTypePotential
+			continue
+		}
+		if regexModifierIdentifier.MatchString(line) {
+			element = &Modifier{
+				Name: strings.TrimSuffix(cleanLine, ":"),
+				Type: modifierType,
+				Mask: "none",
+			}
+			documentation.Elements = append(documentation.Elements, element)
+			continue
+		}
+		if cleanLine == terminator {
+			continue
+		}
+		if element == nil {
+			continue
+		}
+		if strings.HasPrefix(line, modifierMask) {
+			element.Mask = cleanLine
+			continue
+		}
+		if strings.HasPrefix(line, modifierName) {
+			element.FullName = cleanLine
+			continue
+		}
+		if strings.HasPrefix(line, modifierDescription) {
+			element.FullName = cleanLine
 			continue
 		}
 	}

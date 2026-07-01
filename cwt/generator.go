@@ -44,6 +44,30 @@ func Generate() error {
 		return err
 	}
 
+	modifiers := PrintModifiers(documentation)
+	err = os.WriteFile(path.Join(cwtPath, "modifiers.cwt"), []byte(modifiers), 0644)
+	if err != nil {
+		return err
+	}
+
+	modifierCategories := PrintModifierCategories(documentation)
+	err = os.WriteFile(path.Join(cwtPath, "modifier_categories.cwt"), []byte(modifierCategories), 0644)
+	if err != nil {
+		return err
+	}
+
+	scopes := PrintScopes(documentation)
+	err = os.WriteFile(path.Join(cwtPath, "scopes.cwt"), []byte(scopes), 0644)
+	if err != nil {
+		return err
+	}
+
+	scopeEnum := PrintScopeEnum(documentation)
+	err = os.WriteFile(path.Join(cwtPath, "enum_scopes.cwt"), []byte(scopeEnum), 0644)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
