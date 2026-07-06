@@ -33,7 +33,7 @@ func Generate() error {
 	}
 
 	scriptedLists := PrintScriptedListEnum(documentation)
-	err = os.WriteFile(path.Join(cwtPath, "list_base.cwt"), []byte(scriptedLists), 0644)
+	err = os.WriteFile(path.Join(cwtPath, "enum_list_base.cwt"), []byte(scriptedLists), 0644)
 	if err != nil {
 		return err
 	}

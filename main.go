@@ -8,6 +8,7 @@ import (
 	"bahmut.de/pdx-documentation-manager/cwt"
 	"bahmut.de/pdx-documentation-manager/digest"
 	"bahmut.de/pdx-documentation-manager/logging"
+	"bahmut.de/pdx-documentation-manager/npp"
 )
 
 const (
@@ -36,6 +37,15 @@ func main() {
 	if slices.Contains(os.Args, "cwt") {
 		logging.Info("Generating CWT files")
 		err := cwt.Generate()
+		if err != nil {
+			logging.Fatal(err.Error())
+			return
+		}
+	}
+
+	if slices.Contains(os.Args, "npp") {
+		logging.Info("Generating Notepad++ language file")
+		err := npp.Generate()
 		if err != nil {
 			logging.Fatal(err.Error())
 			return

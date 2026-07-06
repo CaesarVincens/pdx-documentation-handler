@@ -72,7 +72,7 @@ type ScriptDocumentation struct {
 }
 
 type ScriptElements interface {
-	Effect | Trigger | EventTarget | Iterator | Scope | OnAction | Modifier
+	ElementName() string
 }
 
 type ElementDocumentation[T ScriptElements] struct {
@@ -87,7 +87,7 @@ type Effect struct {
 	SupportedTargets []string `json:"supported-targets"`
 }
 
-func (e *Effect) ElementName() string {
+func (e Effect) ElementName() string {
 	return e.Name
 }
 
@@ -100,7 +100,7 @@ type Trigger struct {
 	Boolean          bool     `json:"is-bool"`
 }
 
-func (t *Trigger) ElementName() string {
+func (t Trigger) ElementName() string {
 	return t.Name
 }
 
@@ -112,7 +112,7 @@ type Iterator struct {
 	SupportedTargets []string `json:"supported-targets"`
 }
 
-func (i *Iterator) ElementName() string {
+func (i Iterator) ElementName() string {
 	return i.Name
 }
 
@@ -124,7 +124,7 @@ type EventTarget struct {
 	Parameterized   bool     `json:"parameterized"`
 }
 
-func (e *EventTarget) ElementName() string {
+func (e EventTarget) ElementName() string {
 	return e.Name
 }
 
@@ -137,7 +137,7 @@ type Scope struct {
 	SupportsScopes    bool   `json:"supports-scopes"`
 }
 
-func (s *Scope) ElementName() string {
+func (s Scope) ElementName() string {
 	return s.Name
 }
 
@@ -147,7 +147,7 @@ type OnAction struct {
 	Scope    string `json:"scope"`
 }
 
-func (o *OnAction) ElementName() string {
+func (o OnAction) ElementName() string {
 	return o.Name
 }
 
@@ -159,7 +159,7 @@ type Modifier struct {
 	Description string `json:"description"`
 }
 
-func (o *Modifier) ElementName() string {
+func (o Modifier) ElementName() string {
 	return o.Name
 }
 
