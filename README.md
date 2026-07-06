@@ -18,18 +18,18 @@ Generate the documentation files for the game you want. They can be generated wi
 - `dump_data_types`
 
 The generated files can be found in `<Documents>/Paradox Interactive/<Game>/`. These are the relevant files:
+- `logs/event_scopes.log`
+- `logs/data_types/data_types_common.log`
+- `logs/data_types/data_types_gui.log`
+- `logs/data_types/data_types_internalclausewitzgui.log`
+- `logs/data_types/data_types_script.log`
+- `logs/data_types/data_types_uncategorized.log`
 - `docs/custom_localization.log`
 - `docs/effects.log`
 - `docs/event_targets.log`
 - `docs/modifiers.log`
 - `docs/on_actions.log`
 - `docs/triggers.log`
-- `logs/event_scopes.log`
-- `data_types/data_types_common.log`
-- `data_types/data_types_gui.log`
-- `data_types/data_types_internalclausewitzgui.log`
-- `data_types/data_types_script.log`
-- `data_types/data_types_uncategorized.log`
 
 Put the generated documentation into the `docs/new` folder.
 
@@ -43,3 +43,5 @@ Run the application in the command line with one of the following commands:
 - `json` to generate machine-readable JSON files
 
 Example: `.\pdx-documentation-manager.exe json`
+
+The results can be found in the `out` folder.
